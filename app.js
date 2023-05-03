@@ -5,7 +5,7 @@ const getRecommendationsButton = document.getElementById("get-recommendations");
 const recommendationsList = document.getElementById("recommendations");
 
 // Replace with your own API key
-const apiKey = "your_api_key";
+const apiKey = "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";
 
 const openai = axios.create({
   baseURL: "https://api.openai.com/v1/",
@@ -30,13 +30,9 @@ stopRecordingButton.addEventListener("click", async () => {
   stopRecordingButton.disabled = true;
   recorder.stopRecording(async () => {
     const audioBlob = recorder.getBlob();
-    const audioBase64 = await blobToBase64(audioBlob);
-
     try {
-      const response = await openai.post("audio/create", {
-        audio: audioBase64,
-      });
-      transcriptionTextarea.value = response.data.text;
+      const response = await transcribeAudio(audioBlob);
+      transcriptionTextarea.value = response.text;
       transcriptionTextarea.readOnly = false;
       getRecommendationsButton.disabled = false;
     } catch (error) {
@@ -75,4 +71,28 @@ function blobToBase64(blob) {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+}
+
+async function transcribeAudio(audioBlob) {
+  try {
+    const formData = new FormData();
+    formData.append("file", audioBlob, "audio.mp3");
+    formData.append("model", "whisper-1");
+
+    const response = await axios.post(
+      "https://api.openai.com/v1/audio/transcriptions",
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    console.log(response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error transcribing audio:", error);
+  }
 }
