@@ -5,7 +5,7 @@ const getRecommendationsButton = document.getElementById("get-recommendations");
 const recommendationsList = document.getElementById("recommendations");
 
 // Replace with your own API key
-const apiKey = "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";
+const apiKey = "NAuygfghjkjhgvbnmk8JUk113ZJebCXNOuE6xp";
 
 const openai = axios.create({
   baseURL: "https://api.openai.com/v1/",
@@ -18,6 +18,9 @@ const openai = axios.create({
 let recorder;
 
 startRecordingButton.addEventListener("click", () => {
+  if (recorder) {
+    recorder.stopRecording();
+  }
   navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
     recorder = RecordRTC(stream, { type: "audio" });
     recorder.startRecording();
@@ -35,6 +38,7 @@ stopRecordingButton.addEventListener("click", async () => {
       transcriptionTextarea.value = response.text;
       transcriptionTextarea.readOnly = false;
       getRecommendationsButton.disabled = false;
+      startRecordingButton.disabled = false; // Add this line
     } catch (error) {
       console.error("Error transcribing audio:", error);
     }
@@ -42,17 +46,14 @@ stopRecordingButton.addEventListener("click", async () => {
 });
 
 getRecommendationsButton.addEventListener("click", async () => {
-  const prompt = transcriptionTextarea.value;
-  try {
-    const response = await openai.post("gpt-4/create", {
-      prompt: `As a GPT-4 language model, give feedback to an IELTS candidate on how to improve their English proficiency. ${prompt}`,
-      max_tokens: 150,
-      n: 1,
-      stop: null,
-      temperature: 0.8,
-    });
+  const promptInput = document.getElementById("prompt-input");
+  const userPrompt = promptInput.value;
+  const transcription = transcriptionTextarea.value;
 
-    const recommendations = response.data.choices[0].text.trim().split("\n");
+  try {
+    const feedback = await getIeltsFeedback(userPrompt, transcription);
+
+    const recommendations = feedback.split("\n");
     recommendationsList.innerHTML = "";
     for (const recommendation of recommendations) {
       const listItem = document.createElement("li");
@@ -94,5 +95,42 @@ async function transcribeAudio(audioBlob) {
     return response.data;
   } catch (error) {
     console.error("Error transcribing audio:", error);
+  }
+}
+
+async function getIeltsFeedback(userPrompt, transcription) {
+  try {
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "user",
+            content:
+              "As an AI language model, provide feedback to help improve English proficiency for the IELTS exam. Based on the following prompt and user transcription, please give recommendations:",
+          },
+          {
+            role: "user",
+            content: userPrompt,
+          },
+          {
+            role: "assistant",
+            content: transcription,
+          },
+        ],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log(response.data);
+    return response.data.choices[0].message.content.trim();
+  } catch (error) {
+    console.error("Error getting IELTS feedback:", error);
   }
 }

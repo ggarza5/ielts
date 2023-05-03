@@ -27,7 +27,14 @@
 </head>
 <body>
   <h1>Malika Baby</h1>
-  <button id="start-recording">Start Recording</button>
+  <!-- ... -->
+  <div class="input-container">
+    <label for="prompt-input">Prompt:</label>
+    <textarea id="prompt-input" rows="3" cols="50" placeholder="Enter the prompt here"></textarea>
+  </div>
+  <!-- ... -->
+
+  <button id="start-recording">Start Recording Response</button>
   <button id="stop-recording" disabled>Stop Recording and Transcribe</button>
   <textarea id="transcription" readonly></textarea>
   <button id="get-recommendations" disabled>Get Recommendations</button>
